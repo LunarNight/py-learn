@@ -97,26 +97,28 @@ def client_sender(buffer):
         # connect to the target host computer
         client.connect((target,port))
 
+        print("client connected")
+
         if len(buffer):
             client.send(buffer.encode())
         
-        while True:
+        while True: 
             
             # wait for the back date
-            rece_len = 1
+            recv_len = 1
             response = ""
             print("client is waiting for the data")
-            while rece_len:
-                data = client.recv(4096)
-                rece_len = len(data)
-                response+= data
+            while recv_len:
+                data = client.recv(4096).decode()
+                recv_len = len(data)
+                response = data
 
-                if rece_len < 4096:
+                if recv_len < 4096:
                     break
             print(response)
 
             # wait for more input
-            buffer = raw_input("")
+            buffer = input("")
             buffer += "\n"
 
             # send
@@ -125,7 +127,7 @@ def client_sender(buffer):
     except:
         print("[*] Exception! Exiting.")
 
-        client.close()
+    client.close()
 
 def server_loop():
     global target
@@ -152,13 +154,13 @@ def run_command(command):
 
     # newline
     command = command.rstrip()
-
+    print("run command_command:"+command)
     # run commands and return output
     try:
-        output = subprocess.check_output(command,stderr=subprocess.STDOUT, shell=True)
+        output = subprocess.check_output(command,stderr=subprocess.STDOUT, shell=True).decode()
     except:
-        output = "Failed to execute command \r\n"
-    
+        output = f"Failed to execute command \r\n"
+    print("run command_output:"+output)     
     return output
 
 def client_handler(client_socket):
@@ -202,21 +204,18 @@ def client_handler(client_socket):
 
     # if need another shell , go another loop
     if command:
-
-        while True:
-            # open a window
-            #client_socket.send("<BHP:#".encode())
+        prompt = "<BHP:#>"
+        client_socket.send(prompt.encode())
+        while True: 
 
             # receive file untill find enter key
             cmd_buffer = ""
-            while "\n" not in cmd_buffer:
-                print("command: recv client data")
-                
-                cmd_buffer += str(client_socket.recv(1024))
-                print("cmd_buffer:  ",cmd_buffer)
-            
+            while"\n" not in cmd_buffer:
+                cmd_buffer += client_socket.recv(1024).decode()
+               
+            print("cmd_buffer:::",cmd_buffer)
             response = run_command(cmd_buffer)
-
+            response += prompt
             client_socket.send(response.encode())
 
 main()
